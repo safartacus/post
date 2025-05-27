@@ -17,7 +17,8 @@
     "express-validator": "^7.0.1",
     "kafkajs": "^2.2.4",
     "jsonwebtoken": "^9.0.1",
-    "@elastic/elasticsearch": "^8.10.0"
+    "@elastic/elasticsearch": "^8.10.0",
+    "redis": "^4.6.10"
   },
   "devDependencies": {
     "nodemon": "^3.0.1",

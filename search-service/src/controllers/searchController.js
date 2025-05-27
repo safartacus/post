@@ -6,7 +6,7 @@ const Redis = require('redis');
 // Initialize Kafka producer
 const kafka = new Kafka({
   clientId: 'search-service',
-  brokers: process.env.KAFKA_BROKERS.split(',')
+  brokers: process.env.KAFKA_BROKERS
 });
 
 const producer = kafka.producer();
@@ -178,7 +178,7 @@ const getSuggestions = async (req, res) => {
 };
 
 // Search documents
-exports.search = async (req, res) => {
+const search = async (req, res) => {
   try {
     const {
       query,
@@ -248,177 +248,160 @@ exports.search = async (req, res) => {
     const results = await SearchIndex.find(searchQuery, {
       score: { $meta: 'textScore' }
     })
-      .sort(sortOptions)
-      .skip((page - 1) * limit)
-      .limit(parseInt(limit))
-      .populate('metadata.author', 'username avatar')
-      .populate('metadata.category', 'name slug')
-      .lean();
+    .sort(sortOptions)
+    .skip((page - 1) * limit)
+    .limit(parseInt(limit));
 
     const total = await SearchIndex.countDocuments(searchQuery);
 
-    const response = {
+    // Cache results for 5 minutes
+    await redis.setEx(cacheKey, 300, JSON.stringify({
       results,
-      pagination: {
-        total,
-        page: parseInt(page),
-        limit: parseInt(limit),
-        pages: Math.ceil(total / limit)
-      }
-    };
-
-    // Cache the result
-    await redis.set(cacheKey, JSON.stringify(response), {
-      EX: 300 // Cache for 5 minutes
-    });
+      total,
+      page: parseInt(page),
+      pages: Math.ceil(total / limit)
+    }));
 
     res.json({
       success: true,
-      data: response
+      data: {
+        results,
+        total,
+        page: parseInt(page),
+        pages: Math.ceil(total / limit)
+      }
     });
   } catch (error) {
-    console.error('Error searching:', error);
     res.status(500).json({
       success: false,
-      error: 'Failed to perform search'
+      error: error.message
     });
   }
 };
 
-// Index a document
-exports.indexDocument = async (req, res) => {
+// Index document
+const indexDocument = async (req, res) => {
   try {
-    const {
-      type,
-      documentId,
-      title,
-      description,
-      content,
-      tags,
-      metadata
-    } = req.body;
-
-    const searchIndex = new SearchIndex({
-      type,
-      documentId,
-      title,
-      description,
-      content,
-      tags,
-      metadata
-    });
-
-    await searchIndex.save();
+    const document = new SearchIndex(req.body);
+    await document.save();
 
     // Send event to Kafka
-    await producer.connect();
     await producer.send({
       topic: 'document-indexed',
       messages: [
-        { value: JSON.stringify(searchIndex) }
+        {
+          value: JSON.stringify({
+            type: document.type,
+            documentId: document.documentId
+          })
+        }
       ]
     });
 
     // Clear related caches
-    await redis.del(`search:${type}:${documentId}`);
-    await redis.del(`search:${type}:${metadata.author}`);
+    const cacheKeys = await redis.keys(`search:*:${document.type}:*`);
+    if (cacheKeys.length > 0) {
+      await redis.del(cacheKeys);
+    }
 
-    res.status(201).json({
+    res.json({
       success: true,
-      data: searchIndex
+      data: document
     });
   } catch (error) {
-    console.error('Error indexing document:', error);
     res.status(500).json({
       success: false,
-      error: 'Failed to index document'
+      error: error.message
     });
   }
 };
 
 // Update indexed document
-exports.updateIndex = async (req, res) => {
+const updateIndex = async (req, res) => {
   try {
-    const { id } = req.params;
-    const updateData = req.body;
-
-    const searchIndex = await SearchIndex.findByIdAndUpdate(
-      id,
-      updateData,
+    const document = await SearchIndex.findByIdAndUpdate(
+      req.params.id,
+      req.body,
       { new: true }
     );
 
-    if (!searchIndex) {
+    if (!document) {
       return res.status(404).json({
         success: false,
-        error: 'Indexed document not found'
+        error: 'Document not found'
       });
     }
 
     // Send event to Kafka
-    await producer.connect();
     await producer.send({
       topic: 'document-updated',
       messages: [
-        { value: JSON.stringify(searchIndex) }
+        {
+          value: JSON.stringify({
+            type: document.type,
+            documentId: document.documentId
+          })
+        }
       ]
     });
 
     // Clear related caches
-    await redis.del(`search:${searchIndex.type}:${searchIndex.documentId}`);
-    await redis.del(`search:${searchIndex.type}:${searchIndex.metadata.author}`);
+    const cacheKeys = await redis.keys(`search:*:${document.type}:*`);
+    if (cacheKeys.length > 0) {
+      await redis.del(cacheKeys);
+    }
 
     res.json({
       success: true,
-      data: searchIndex
+      data: document
     });
   } catch (error) {
-    console.error('Error updating index:', error);
     res.status(500).json({
       success: false,
-      error: 'Failed to update index'
+      error: error.message
     });
   }
 };
 
 // Delete indexed document
-exports.deleteIndex = async (req, res) => {
+const deleteIndex = async (req, res) => {
   try {
-    const { id } = req.params;
+    const document = await SearchIndex.findByIdAndDelete(req.params.id);
 
-    const searchIndex = await SearchIndex.findById(id);
-
-    if (!searchIndex) {
+    if (!document) {
       return res.status(404).json({
         success: false,
-        error: 'Indexed document not found'
+        error: 'Document not found'
       });
     }
 
-    await searchIndex.remove();
-
     // Send event to Kafka
-    await producer.connect();
     await producer.send({
       topic: 'document-deleted',
       messages: [
-        { value: JSON.stringify({ id: searchIndex._id }) }
+        {
+          value: JSON.stringify({
+            type: document.type,
+            documentId: document.documentId
+          })
+        }
       ]
     });
 
     // Clear related caches
-    await redis.del(`search:${searchIndex.type}:${searchIndex.documentId}`);
-    await redis.del(`search:${searchIndex.type}:${searchIndex.metadata.author}`);
+    const cacheKeys = await redis.keys(`search:*:${document.type}:*`);
+    if (cacheKeys.length > 0) {
+      await redis.del(cacheKeys);
+    }
 
     res.json({
       success: true,
-      message: 'Indexed document deleted successfully'
+      message: 'Document deleted successfully'
     });
   } catch (error) {
-    console.error('Error deleting index:', error);
     res.status(500).json({
       success: false,
-      error: 'Failed to delete index'
+      error: error.message
     });
   }
 };

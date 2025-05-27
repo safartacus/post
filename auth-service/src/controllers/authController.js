@@ -6,7 +6,7 @@ const { Kafka } = require('kafkajs');
 
 const kafka = new Kafka({
   clientId: 'auth-service',
-  brokers: ['kafka:29092']
+  brokers: ['kafka:9092']
 });
 
 const producer = kafka.producer();
@@ -21,6 +21,7 @@ const generateToken = (user) => {
 
 const register = async (req, res) => {
   try {
+    console.log('Registering user', req.body);
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });

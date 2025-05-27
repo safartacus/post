@@ -11,7 +11,23 @@ const app = express();
 // Middleware
 app.use(cors());
 app.use(helmet());
-app.use(express.json());
+
+// Body parser middleware
+app.use(express.json({
+  limit: '10mb',
+  verify: (req, res, buf) => {
+    try {
+      JSON.parse(buf);
+    } catch (e) {
+      throw new Error('Invalid JSON');
+    }
+  }
+}));
+
+app.use(express.urlencoded({
+  extended: true,
+  limit: '10mb'
+}));
 
 // MongoDB Connection
 mongoose.connect('mongodb://mongodb:27017/auth-service', {
@@ -24,14 +40,25 @@ mongoose.connect('mongodb://mongodb:27017/auth-service', {
 });
 
 // Routes
-app.use('/auth', authRoutes);
+app.use('/api/auth', authRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'OK' });
 });
 
-const PORT = process.env.PORT || 3007;
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error('Error:', err);
+  res.status(500).json({
+    error: {
+      message: err.message || 'Internal server error',
+      code: 'INTERNAL_ERROR'
+    }
+  });
+});
+
+const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`Auth Service is running on port ${PORT}`);
 }); 

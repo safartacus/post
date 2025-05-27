@@ -8,8 +8,8 @@ const {
 } = require('../middleware/categoryMiddleware');
 const {
   createCategory,
-  getCategories,
-  getCategory,
+  getAllCategories,
+  getCategoryById,
   updateCategory,
   deleteCategory,
   getCategoryTree
@@ -64,7 +64,7 @@ router.post('/',
 
 router.get('/',
   query('includeInactive').optional().isBoolean(),
-  getCategories
+  getAllCategories
 );
 
 router.get('/tree',
@@ -73,7 +73,7 @@ router.get('/tree',
 
 router.get('/:id',
   param('id').isMongoId().withMessage('Invalid category ID'),
-  getCategory
+  getCategoryById
 );
 
 router.patch('/:id',

@@ -35,7 +35,7 @@ redisClient.connect()
 // Kafka Consumer
 const kafka = new Kafka({
   clientId: 'search-service',
-  brokers: process.env.KAFKA_BROKERS.split(',')
+  brokers: process.env.KAFKA_BROKERS
 });
 
 const consumer = kafka.consumer({ groupId: 'search-service-group' });

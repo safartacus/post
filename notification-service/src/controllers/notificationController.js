@@ -241,11 +241,3 @@ exports.getUnreadCount = async (req, res) => {
     });
   }
 };
-
-module.exports = {
-  createNotification,
-  getUserNotifications,
-  markAsRead,
-  deleteNotifications,
-  getUnreadCount
-}; 

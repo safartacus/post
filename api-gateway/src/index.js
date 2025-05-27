@@ -13,6 +13,9 @@ app.use(helmet());
 app.use(cors());
 app.use(express.json());
 
+
+
+
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -24,7 +27,7 @@ app.use(limiter);
 const services = {
   auth: {
     url: process.env.AUTH_SERVICE_URL || 'http://localhost:3001',
-    routes: ['/api/auth/*']
+    routes: ['/api/auth', '/api/auth/*']
   },
   user: {
     url: process.env.USER_SERVICE_URL || 'http://localhost:3002',
@@ -40,7 +43,7 @@ const services = {
   },
   category: {
     url: process.env.CATEGORY_SERVICE_URL || 'http://localhost:3005',
-    routes: ['/api/categories/*']
+    routes: ['/api/categories', '/api/categories/*']
   },
   comment: {
     url: process.env.COMMENT_SERVICE_URL || 'http://localhost:3006',
@@ -71,9 +74,13 @@ const proxyOptions = {
     '^/api': '/api'
   },
   onProxyReq: (proxyReq, req, res) => {
-    // Add original IP to headers
-    proxyReq.setHeader('X-Original-IP', req.ip);
-    proxyReq.setHeader('X-Forwarded-For', req.ip);
+    // Eğer body varsa, onu proxy request'ine ekle
+    if (req.body) {
+      const bodyData = JSON.stringify(req.body);
+      proxyReq.setHeader('Content-Type', 'application/json');
+      proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
+      proxyReq.write(bodyData);
+    }
   },
   onError: (err, req, res) => {
     console.error('Proxy Error:', err);
@@ -83,7 +90,9 @@ const proxyOptions = {
         code: 'SERVICE_UNAVAILABLE'
       }
     });
-  }
+  },
+  proxyTimeout: 30000,
+  timeout: 30000
 };
 
 // Setup proxies for each service
@@ -93,7 +102,6 @@ Object.entries(services).forEach(([serviceName, config]) => {
       ...proxyOptions,
       target: config.url,
       router: (req) => {
-        // Add service name to request for logging
         req.serviceName = serviceName;
         return config.url;
       }

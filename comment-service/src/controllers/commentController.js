@@ -338,12 +338,3 @@ exports.toggleLike = async (req, res) => {
     });
   }
 };
-
-module.exports = {
-  createComment,
-  getContentComments,
-  getCommentReplies,
-  updateComment,
-  deleteComment,
-  toggleLike
-}; 

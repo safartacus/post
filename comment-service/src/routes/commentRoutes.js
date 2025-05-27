@@ -7,11 +7,11 @@ const {
 } = require('../middleware/commentMiddleware');
 const {
   createComment,
-  getComments,
-  getComment,
+  getContentComments,
+  getCommentReplies,
   updateComment,
   deleteComment,
-  likeComment
+  toggleLike
 } = require('../controllers/commentController');
 
 const router = express.Router();
@@ -60,13 +60,13 @@ router.post('/',
 router.get('/content/:contentId',
   param('contentId').isMongoId().withMessage('Invalid content ID'),
   validatePagination,
-  getComments
+  getContentComments
 );
 
 router.get('/:commentId/replies',
   param('commentId').isMongoId().withMessage('Invalid comment ID'),
   validatePagination,
-  getComment
+  getCommentReplies
 );
 
 router.patch('/:id',
@@ -92,7 +92,7 @@ router.delete('/:id',
 router.post('/:id/like',
   auth,
   param('id').isMongoId().withMessage('Invalid comment ID'),
-  likeComment
+  toggleLike
 );
 
 module.exports = router; 

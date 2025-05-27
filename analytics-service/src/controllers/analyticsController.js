@@ -391,13 +391,12 @@ cron.schedule('0 0 * * *', async () => {
     console.error('Error in daily analytics aggregation:', error);
   }
 });
-
 module.exports = {
-  trackEvent,
-  getContentAnalytics,
-  getUserAnalytics,
+  trackEvent: exports.trackEvent,
+  getUserAnalytics: exports.getUserAnalytics,
+  getContentAnalytics: exports.getContentAnalytics,
+  getCategoryAnalytics: exports.getCategoryAnalytics,
+  getAggregatedAnalytics: exports.getAggregatedAnalytics,
   getPlatformAnalytics,
-  getLocationAnalytics,
-  getAggregatedAnalytics,
-  getCategoryAnalytics
-}; 
+  getLocationAnalytics
+};
