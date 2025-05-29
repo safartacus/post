@@ -1,10 +1,6 @@
 const jwt = require('jsonwebtoken');
 
 const auth = (req, res, next) => {
-  // Debug için request bilgilerini logla
-  console.log('Request Path:', req.path);
-  console.log('Request Method:', req.method);
-  console.log('Request URL:', req.originalUrl);
 
   // Public endpointler
   const publicPaths = [
@@ -29,6 +25,7 @@ const auth = (req, res, next) => {
   }
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
     req.user = decoded;
     next();
   } catch (err) {

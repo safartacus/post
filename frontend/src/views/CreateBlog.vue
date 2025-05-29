@@ -1,0 +1,280 @@
+<template>
+  <div class="create-blog-container">
+    <el-card class="create-blog-card">
+      <template #header>
+        <h2>Yeni Blog Oluştur</h2>
+      </template>
+      <el-form
+        ref="formRef"
+        :model="form"
+        :rules="rules"
+        label-position="top"
+        @submit.prevent="handleSubmit"
+      >
+        <el-form-item label="Başlık" prop="title">
+          <el-input v-model="form.title" placeholder="Blog başlığı" />
+        </el-form-item>
+        <el-form-item label="Açıklama" prop="description">
+          <el-input v-model="form.description" placeholder="Kısa açıklama" type="textarea" :rows="2" />
+        </el-form-item>
+        <el-form-item label="İçerik" prop="content">
+          <QuillEditor
+            v-model:content="form.content"
+            contentType="html"
+            :modules="quillModules"
+            style="min-height: 300px"
+          />
+        </el-form-item>
+        <el-form-item label="Kategori" prop="category">
+          <el-select v-model="form.category" placeholder="Kategori seçin">
+            <el-option
+              v-for="cat in categories"
+              :key="cat._id"
+              :label="cat.name"
+              :value="cat._id"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="Etiketler (virgül ile ayırın)" prop="tags">
+          <el-input v-model="form.tags" placeholder="ör: vue, javascript, frontend" />
+        </el-form-item>
+        <el-form-item label="Durum" prop="status">
+          <el-select v-model="form.status" placeholder="Durum seçin">
+            <el-option label="Taslak" value="draft" />
+            <el-option label="Yayınlandı" value="published" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="Görünürlük" prop="visibility">
+          <el-select v-model="form.visibility" placeholder="Görünürlük seçin">
+            <el-option label="Herkese Açık" value="public" />
+            <el-option label="Gizli" value="private" />
+            <el-option label="Liste Dışı" value="unlisted" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="Medya">
+          <el-upload
+            class="upload-demo"
+            action="/api/media/upload"
+            :on-success="handleMediaSuccess"
+            :before-upload="beforeMediaUpload"
+            :show-file-list="false"
+            :data="{ type: mediaType }"
+            :accept="mediaType === 'image' ? 'image/*' : 'video/*'"
+          >
+            <el-button>{{ mediaType === 'image' ? 'Resim Yükle' : 'Video Yükle' }}</el-button>
+          </el-upload>
+          <el-radio-group v-model="mediaType" style="margin-left: 1rem;">
+            <el-radio label="image">Resim</el-radio>
+            <el-radio label="video">Video</el-radio>
+          </el-radio-group>
+          <div v-if="mediaPreview" style="margin-top: 1rem;">
+            <img v-if="mediaType === 'image'" :src="mediaPreview" style="max-width: 200px;" />
+            <video v-else :src="mediaPreview" controls style="max-width: 200px;" />
+          </div>
+        </el-form-item>
+        <el-form-item>
+          <el-button
+            type="primary"
+            native-type="submit"
+            :loading="loading"
+            class="submit-button"
+          >
+            Yayınla
+          </el-button>
+        </el-form-item>
+      </el-form>
+    </el-card>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useBlogStore } from '@/store/modules/blog.store'
+import type { FormInstance, FormRules } from 'element-plus'
+import { ElMessage } from 'element-plus'
+import axios from 'axios'
+import { QuillEditor } from 'vue3-quill'
+import 'quill/dist/quill.snow.css'
+
+const router = useRouter()
+const blogStore = useBlogStore()
+const formRef = ref<FormInstance>()
+
+const categories = ref<any[]>([])
+
+const form = ref({
+  title: '',
+  description: '',
+  content: '',
+  category: '',
+  tags: '', // comma separated string
+  status: 'draft',
+  visibility: 'public'
+})
+
+const loading = ref(false)
+
+// Media upload
+const mediaType = ref<'image' | 'video'>('image')
+const mediaPreview = ref<string | null>(null)
+const mediaInfo = ref<any>(null)
+
+const handleMediaSuccess = (response: any, file: any) => {
+  mediaInfo.value = response
+  mediaPreview.value = response.url || ''
+}
+
+const beforeMediaUpload = (file: File) => {
+  // İsteğe bağlı: dosya boyutu/kontrol
+  return true
+}
+
+// Quill toolbar ve image handler
+const quillModules = {
+  toolbar: {
+    container: [
+      ['bold', 'italic', 'underline', 'strike'],
+      ['blockquote', 'code-block'],
+      [{ header: 1 }, { header: 2 }],
+      [{ list: 'ordered' }, { list: 'bullet' }],
+      [{ script: 'sub' }, { script: 'super' }],
+      [{ indent: '-1' }, { indent: '+1' }],
+      [{ direction: 'rtl' }],
+      [{ size: ['small', false, 'large', 'huge'] }],
+      [{ header: [1, 2, 3, 4, 5, 6, false] }],
+      [{ color: [] }, { background: [] }],
+      [{ font: [] }],
+      [{ align: [] }],
+      ['clean'],
+      ['image', 'video']
+    ],
+    handlers: {
+      image: function () {
+        const input = document.createElement('input')
+        input.setAttribute('type', 'file')
+        input.setAttribute('accept', 'image/*')
+        input.click()
+        input.onchange = async () => {
+          const file = input.files ? input.files[0] : null
+          if (file) {
+            const formData = new FormData()
+            formData.append('file', file)
+            formData.append('type', 'image')
+            try {
+              const res = await axios.post('/api/media/upload', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+              })
+              const url = res.data.url
+              const quill = this.quill
+              const range = quill.getSelection()
+              quill.insertEmbed(range.index, 'image', url)
+            } catch (e) {
+              ElMessage.error('Görsel yüklenemedi')
+            }
+          }
+        }
+      },
+      video: function () {
+        const input = document.createElement('input')
+        input.setAttribute('type', 'file')
+        input.setAttribute('accept', 'video/*')
+        input.click()
+        input.onchange = async () => {
+          const file = input.files ? input.files[0] : null
+          if (file) {
+            const formData = new FormData()
+            formData.append('file', file)
+            formData.append('type', 'video')
+            try {
+              const res = await axios.post('/api/media/upload', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+              })
+              const url = res.data.url
+              const quill = this.quill
+              const range = quill.getSelection()
+              quill.insertEmbed(range.index, 'video', url)
+            } catch (e) {
+              ElMessage.error('Video yüklenemedi')
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+const rules: FormRules = {
+  title: [
+    { required: true, message: 'Başlık gerekli', trigger: 'blur' },
+    { min: 3, message: 'Başlık en az 3 karakter olmalı', trigger: 'blur' }
+  ],
+  description: [
+    { required: true, message: 'Açıklama gerekli', trigger: 'blur' },
+    { min: 10, message: 'Açıklama en az 10 karakter olmalı', trigger: 'blur' }
+  ],
+  content: [
+    { required: true, message: 'İçerik gerekli', trigger: 'blur' },
+    { min: 10, message: 'İçerik en az 10 karakter olmalı', trigger: 'blur' }
+  ],
+  category: [
+    { required: true, message: 'Kategori seçilmeli', trigger: 'change' }
+  ],
+  status: [
+    { required: true, message: 'Durum seçilmeli', trigger: 'change' }
+  ],
+  visibility: [
+    { required: true, message: 'Görünürlük seçilmeli', trigger: 'change' }
+  ]
+}
+
+onMounted(async () => {
+  // Kategorileri API'den çek
+  try {
+    const res = await axios.get('/api/categories')
+    categories.value = res.data
+  } catch (e) {
+    categories.value = []
+  }
+})
+
+const handleSubmit = async () => {
+  if (!formRef.value) return
+  await formRef.value.validate(async (valid) => {
+    if (valid) {
+      loading.value = true
+      try {
+        await blogStore.createBlog({
+          ...form.value,
+          tags: form.value.tags.split(',').map((t: string) => t.trim()).filter(Boolean),
+          media: mediaInfo.value
+        })
+        ElMessage.success('Blog başarıyla oluşturuldu')
+        router.push('/')
+      } catch (error) {
+        ElMessage.error('Blog oluşturulamadı')
+      } finally {
+        loading.value = false
+      }
+    }
+  })
+}
+</script>
+
+<style scoped>
+.create-blog-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: calc(100vh - 200px);
+}
+
+.create-blog-card {
+  width: 100%;
+  max-width: 600px;
+}
+
+.submit-button {
+  width: 100%;
+}
+</style> 

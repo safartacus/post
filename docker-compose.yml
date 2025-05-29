@@ -40,7 +40,7 @@ services:
       - MONGODB_URI=mongodb://mongodb:27017/auth-service
       - REDIS_URL=redis://redis:6379
       - KAFKA_BROKER=kafka:9092
-      - JWT_SECRET=your-jwt-secret
+      - JWT_SECRET=fenerbahce
     depends_on:
       - mongodb
       - redis
