@@ -22,7 +22,7 @@
             v-model:content="form.content"
             contentType="html"
             :modules="quillModules"
-            style="min-height: 300px"
+            style="min-height: 300px; width: 100%"
           />
         </el-form-item>
         <el-form-item label="Kategori" prop="category">
@@ -94,7 +94,7 @@ import { useBlogStore } from '@/store/modules/blog.store'
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage } from 'element-plus'
 import axios from 'axios'
-import { QuillEditor } from 'vue3-quill'
+import { quillEditor as QuillEditor } from 'vue3-quill'
 import 'quill/dist/quill.snow.css'
 
 const router = useRouter()

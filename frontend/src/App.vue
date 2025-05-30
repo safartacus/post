@@ -23,7 +23,7 @@
           <template v-if="isLoggedIn">
             <el-button @click="navigateToCreate">Yeni Blog</el-button>
             <el-dropdown @command="handleCommand">
-              <el-avatar :src="user?.avatar" />
+              <el-avatar :src="user?.avatar ?? ''" />
               <template #dropdown>
                 <el-dropdown-menu>
                   <el-dropdown-item command="profile">Profil</el-dropdown-item>

@@ -37,7 +37,7 @@ services:
       - "3001:3001"
     environment:
       - NODE_ENV=development
-      - MONGODB_URI=mongodb://mongodb:27017/auth-service
+      - MONGODB_URI=mongodb+srv://halilsafayav:2576076Sa@project.e7chk.mongodb.net/auth-service?retryWrites=true&w=majority&appName=Project
       - REDIS_URL=redis://redis:6379
       - KAFKA_BROKER=kafka:9092
       - JWT_SECRET=fenerbahce
@@ -53,7 +53,7 @@ services:
       - "3002:3002"
     environment:
       - NODE_ENV=development
-      - MONGODB_URI=mongodb://mongodb:27017/user-service
+      - MONGODB_URI=mongodb+srv://halilsafayav:2576076Sa@project.e7chk.mongodb.net/user-service?retryWrites=true&w=majority&appName=Project
       - REDIS_URL=redis://redis:6379
       - KAFKA_BROKER=kafka:9092
     depends_on:
@@ -68,7 +68,7 @@ services:
       - "3003:3003"
     environment:
       - NODE_ENV=development
-      - MONGODB_URI=mongodb://mongodb:27017/content-service
+      - MONGODB_URI=mongodb+srv://halilsafayav:2576076Sa@project.e7chk.mongodb.net/content-service?retryWrites=true&w=majority&appName=Project
       - REDIS_URL=redis://redis:6379
       - KAFKA_BROKER=kafka:9092
     depends_on:
@@ -83,7 +83,7 @@ services:
       - "3004:3004"
     environment:
       - NODE_ENV=development
-      - MONGODB_URI=mongodb://mongodb:27017/media-service
+      - MONGODB_URI=mongodb+srv://halilsafayav:2576076Sa@project.e7chk.mongodb.net/media-service?retryWrites=true&w=majority&appName=Project
       - REDIS_URL=redis://redis:6379
       - KAFKA_BROKER=kafka:9092
       - MINIO_ENDPOINT=minio
@@ -103,7 +103,7 @@ services:
       - "3005:3005"
     environment:
       - NODE_ENV=development
-      - MONGODB_URI=mongodb://mongodb:27017/category-service
+      - MONGODB_URI=mongodb+srv://halilsafayav:2576076Sa@project.e7chk.mongodb.net/category-service?retryWrites=true&w=majority&appName=Project
       - REDIS_URL=redis://redis:6379
       - KAFKA_BROKER=kafka:9092
     depends_on:
@@ -133,7 +133,7 @@ services:
       - "3007:3007"
     environment:
       - NODE_ENV=development
-      - MONGODB_URI=mongodb://mongodb:27017/notification-service
+      - MONGODB_URI=mongodb+srv://halilsafayav:2576076Sa@project.e7chk.mongodb.net/notification-service?retryWrites=true&w=majority&appName=Project
       - REDIS_URL=redis://redis:6379
       - KAFKA_BROKER=kafka:9092
     depends_on:
@@ -148,7 +148,7 @@ services:
       - "3008:3008"
     environment:
       - NODE_ENV=development
-      - MONGODB_URI=mongodb://mongodb:27017/analytics-service
+      - MONGODB_URI=mongodb+srv://halilsafayav:2576076Sa@project.e7chk.mongodb.net/analytics-service?retryWrites=true&w=majority&appName=Project
       - REDIS_URL=redis://redis:6379
       - KAFKA_BROKER=kafka:9092
       - ELASTICSEARCH_URL=http://elasticsearch:9200
@@ -180,7 +180,7 @@ services:
       - "3010:3010"
     environment:
       - NODE_ENV=development
-      - MONGODB_URI=mongodb://mongodb:27017/admin-service
+      - MONGODB_URI=mongodb+srv://halilsafayav:2576076Sa@project.e7chk.mongodb.net/admin-service?retryWrites=true&w=majority&appName=Project
       - REDIS_URL=redis://redis:6379
       - KAFKA_BROKER=kafka:9092
     depends_on:

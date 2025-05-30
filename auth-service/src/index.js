@@ -30,9 +30,10 @@ app.use(express.urlencoded({
 }));
 
 // MongoDB Connection
-mongoose.connect('mongodb://mongodb:27017/auth-service', {
+mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
-  useUnifiedTopology: true
+  useUnifiedTopology: true,
+  dbName: 'auth-service'
 }).then(() => {
   console.log('Connected to MongoDB');
 }).catch((error) => {
