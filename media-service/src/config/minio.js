@@ -23,6 +23,7 @@ const BUCKETS = {
 // Initialize buckets
 const initializeBuckets = async () => {
   try {
+    console.log("initializeBuckets", minioClient)
     for (const bucket of Object.values(BUCKETS)) {
       const exists = await minioClient.bucketExists(bucket);
       if (!exists) {
@@ -82,7 +83,7 @@ const listObjects = async (bucket, prefix = '') => {
     throw error;
   }
 };
-
+initializeBuckets().catch(console.error);
 module.exports = {
   minioClient,
   BUCKETS,

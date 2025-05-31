@@ -1,4 +1,5 @@
 const Media = require('../models/Media');
+const multer = require('multer');
 const { Kafka } = require('kafkajs');
 const {
   BUCKETS,
@@ -63,7 +64,10 @@ const getUploadUrl = async (req, res) => {
       originalName,
       owner: req.user.id,
       tags: tags || [],
-      isPublic: isPublic || false
+      isPublic: isPublic || false,
+      mimeType: allowedTypes[type][0], // Default mime type
+      size: 0, // Will be updated after upload
+      status: 'processing'
     });
 
     await media.save();
@@ -83,7 +87,6 @@ const getUploadUrl = async (req, res) => {
 const processMedia = async (req, res) => {
   try {
     const { type, key, bucket, originalName, mimeType, size, mediaId } = req.body;
-
     // Validate file type and size
     const allowedTypes = {
       image: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
@@ -364,6 +367,7 @@ const updateMedia = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
 
 module.exports = {
   getUploadUrl,

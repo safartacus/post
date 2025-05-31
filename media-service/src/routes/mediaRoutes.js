@@ -40,4 +40,5 @@ router.get('/:id', auth, getMediaInfo);
 router.delete('/:id', auth, deleteMedia);
 router.patch('/:id', auth, validateUpdateRequest, updateMedia);
 
+
 module.exports = router; 

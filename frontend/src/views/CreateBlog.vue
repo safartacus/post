@@ -54,11 +54,8 @@
         <el-form-item label="Medya">
           <el-upload
             class="upload-demo"
-            action="/api/media/upload"
-            :on-success="handleMediaSuccess"
-            :before-upload="beforeMediaUpload"
+            :http-request="handleMediaUpload"
             :show-file-list="false"
-            :data="{ type: mediaType }"
             :accept="mediaType === 'image' ? 'image/*' : 'video/*'"
           >
             <el-button>{{ mediaType === 'image' ? 'Resim Yükle' : 'Video Yükle' }}</el-button>
@@ -93,7 +90,7 @@ import { useRouter } from 'vue-router'
 import { useBlogStore } from '@/store/modules/blog.store'
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage } from 'element-plus'
-import axios from 'axios'
+import { createBlog, getCategories, uploadMedia } from '@/apis/blogApi'
 import { quillEditor as QuillEditor } from 'vue3-quill'
 import 'quill/dist/quill.snow.css'
 
@@ -120,14 +117,16 @@ const mediaType = ref<'image' | 'video'>('image')
 const mediaPreview = ref<string | null>(null)
 const mediaInfo = ref<any>(null)
 
-const handleMediaSuccess = (response: any, file: any) => {
-  mediaInfo.value = response
-  mediaPreview.value = response.url || ''
-}
-
-const beforeMediaUpload = (file: File) => {
-  // İsteğe bağlı: dosya boyutu/kontrol
-  return true
+const handleMediaUpload = async (options: any) => {
+  try {
+    const result = await uploadMedia(options.file, mediaType.value);
+    mediaInfo.value = result;
+    mediaPreview.value = result.url || '';
+    options.onSuccess(result);
+  } catch (error) {
+    options.onError(error);
+    ElMessage.error('Medya yüklenemedi');
+  }
 }
 
 // Quill toolbar ve image handler
@@ -158,14 +157,9 @@ const quillModules = {
         input.onchange = async () => {
           const file = input.files ? input.files[0] : null
           if (file) {
-            const formData = new FormData()
-            formData.append('file', file)
-            formData.append('type', 'image')
             try {
-              const res = await axios.post('/api/media/upload', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-              })
-              const url = res.data.url
+              const result = await uploadMedia(file, 'image')
+              const url = result.url
               const quill = this.quill
               const range = quill.getSelection()
               quill.insertEmbed(range.index, 'image', url)
@@ -183,14 +177,9 @@ const quillModules = {
         input.onchange = async () => {
           const file = input.files ? input.files[0] : null
           if (file) {
-            const formData = new FormData()
-            formData.append('file', file)
-            formData.append('type', 'video')
             try {
-              const res = await axios.post('/api/media/upload', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-              })
-              const url = res.data.url
+              const result = await uploadMedia(file, 'video')
+              const url = result.url
               const quill = this.quill
               const range = quill.getSelection()
               quill.insertEmbed(range.index, 'video', url)
@@ -229,12 +218,12 @@ const rules: FormRules = {
 }
 
 onMounted(async () => {
-  // Kategorileri API'den çek
   try {
-    const res = await axios.get('/api/categories')
-    categories.value = res.data
+    const data = await getCategories();
+    categories.value = data;
   } catch (e) {
-    categories.value = []
+    categories.value = [];
+    ElMessage.error('Kategoriler yüklenemedi');
   }
 })
 
@@ -244,11 +233,12 @@ const handleSubmit = async () => {
     if (valid) {
       loading.value = true
       try {
-        await blogStore.createBlog({
+        const blogData = {
           ...form.value,
           tags: form.value.tags.split(',').map((t: string) => t.trim()).filter(Boolean),
           media: mediaInfo.value
-        })
+        };
+        await createBlog(blogData);
         ElMessage.success('Blog başarıyla oluşturuldu')
         router.push('/')
       } catch (error) {
