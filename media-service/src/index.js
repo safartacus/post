@@ -9,7 +9,7 @@ const mediaRoutes = require('./routes/mediaRoutes');
 const { initializeBuckets } = require('./config/minio');
 
 const app = express();
-const PORT = process.env.PORT || 3007;
+const PORT = process.env.PORT || 3004;
 
 // Middleware
 app.use(helmet());

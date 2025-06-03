@@ -104,18 +104,13 @@ export const uploadMedia = async (file, type) => {
 
     const { uploadUrl, key, bucket, mediaId } = uploadUrlResponse.data;
 
-    // 2. Dosyayı yükle
-    const formData = new FormData();
-    formData.append('file', file);
-
-     await axios.put(uploadUrl, file, {
+    console.log(file instanceof File);
+    console.log(file instanceof Blob);
+    await axios.put(uploadUrl, file, {
       headers: {
-        'Content-Type': file.type,
-        'x-amz-acl': 'public-read'
+        'Content-Type': file.type
       },
-      withCredentials: false
     });
-
 
     // 3. İşleme isteği gönder
     const processResponse = await axios.post(`${API_URL}/media/process`, {

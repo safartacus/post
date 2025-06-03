@@ -119,7 +119,20 @@ const mediaInfo = ref<any>(null)
 
 const handleMediaUpload = async (options: any) => {
   try {
-    const result = await uploadMedia(options.file, mediaType.value);
+    const file = options.file;
+    console.log('Dosya Bilgileri:', {
+      name: file.name,
+      type: file.type,
+      size: file.size,
+      lastModified: file.lastModified
+    });
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      console.log('Dosya İçeriği (ilk 100 byte):', 
+        e.target.result.slice(0, 100));
+    };
+    reader.readAsArrayBuffer(file);
+    const result = await uploadMedia(file, mediaType.value);
     mediaInfo.value = result;
     mediaPreview.value = result.url || '';
     options.onSuccess(result);

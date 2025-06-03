@@ -86,10 +86,11 @@ services:
       - MONGODB_URI=mongodb+srv://halilsafayav:2576076Sa@project.e7chk.mongodb.net/media-service?retryWrites=true&w=majority&appName=Project
       - REDIS_URL=redis://redis:6379
       - KAFKA_BROKER=kafka:9092
-      - MINIO_ENDPOINT=minio
-      - MINIO_PORT=9000
-      - MINIO_ACCESS_KEY=minioadmin
-      - MINIO_SECRET_KEY=minioadmin
+      - MINIO_ENDPOINT=157.180.85.118
+      - MINIO_PORT=30000
+      - MINIO_ACCESS_KEY=WYeRZwGYTAopMKkMd9cn
+      - MINIO_SECRET_KEY=uF1IDTQmvvap1NlDd6mDzxSYBiDo9MsGr52qgcHZ
+      - MINIO_USE_SSL=false
     depends_on:
       - mongodb
       - redis
@@ -118,7 +119,7 @@ services:
       - "3006:3006"
     environment:
       - NODE_ENV=development
-      - MONGODB_URI=mongodb://mongodb:27017/comment-service
+      - MONGODB_URI=mongodb+srv://halilsafayav:2576076Sa@project.e7chk.mongodb.net/comment-service?retryWrites=true&w=majority&appName=Project
       - REDIS_URL=redis://redis:6379
       - KAFKA_BROKER=kafka:9092
     depends_on:
